@@ -1,0 +1,45 @@
+name: Build NEPTUN APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract game
+        run: |
+          mkdir -p project
+          unzip -q NEPTUN_Official_Build_Project.zip -d project
+          test -f project/settings.gradle
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '8.13'
+
+      - name: Build Android APK
+        working-directory: project
+        run: gradle --no-daemon assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NEPTUN-APK
+          path: project/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
